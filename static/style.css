@@ -1,0 +1,38 @@
+:root {
+  color-scheme: light;
+  --ink: #1f3029;
+  --muted: #68776f;
+  --paper: #f7faf7;
+  --card: #ffffff;
+  --line: #dbe5df;
+  --accent: #287052;
+  --accent-soft: #e5f2eb;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); }
+.container { width: min(100% - 2rem, 680px); margin: 0 auto; padding: 2.5rem 0 4rem; }
+.checkin-date { margin: 0 0 1.5rem; color: var(--muted); font-size: .85rem; font-weight: 650; }
+.checkin-date strong { color: var(--accent); letter-spacing: .1em; }
+.checkin-date span { display: block; margin-top: .25rem; }
+h1 { margin: 0 0 .35rem; font-size: clamp(2rem, 9vw, 3.4rem); letter-spacing: -.045em; }
+.confirmation { padding: .8rem 1rem; border-radius: .8rem; background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+.habit-group { margin-top: 1rem; padding: 1rem 1.1rem .3rem; border: 1px solid var(--line); border-radius: 1rem; background: var(--card); box-shadow: 0 7px 24px rgba(31,48,41,.04); }
+.habit-group h2 { margin: 0 0 .25rem; color: var(--muted); font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; }
+.habit-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 0; padding: 1rem 0; border: 0; border-top: 1px solid var(--line); }
+.habit-row:first-of-type { border-top: 0; }
+.habit-row legend { float: left; width: auto; padding: 0; font-weight: 650; }
+.choices { display: flex; align-items: center; gap: .3rem; }
+.choices input { position: absolute; opacity: 0; pointer-events: none; }
+.choices label, .clear-choice { min-width: 3rem; padding: .55rem .7rem; border: 1px solid var(--line); border-radius: .65rem; background: var(--paper); color: var(--ink); text-align: center; font: inherit; font-size: .85rem; cursor: pointer; }
+.choices input:checked + label { border-color: var(--accent); background: var(--accent); color: white; }
+.choices input:focus-visible + label { outline: 3px solid #8bbfa9; outline-offset: 2px; }
+.clear-choice { min-width: auto; border: 0; background: transparent; color: var(--muted); font-size: .75rem; }
+.save-button { width: 100%; margin-top: 1.25rem; padding: 1rem; border: 0; border-radius: .9rem; background: var(--accent); color: white; font: inherit; font-weight: 750; cursor: pointer; }
+.save-button:hover { background: #1f5b43; }
+@media (max-width: 480px) {
+  .container { width: min(100% - 1rem, 680px); padding-top: 1.25rem; }
+  .habit-row { align-items: flex-start; flex-direction: column; }
+  .choices { width: 100%; }
+  .choices label { flex: 1; }
+}

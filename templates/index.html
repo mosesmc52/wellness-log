@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>wellness-log</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}">
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>Wellness Log</h1>
+      <p class="checkin-date"><strong>DAILY CHECK-IN</strong><br><span>{{ display_date }}</span></p>
+      {% if saved %}<p class="confirmation" role="status">Saved successfully.</p>{% endif %}
+    </header>
+
+    <form method="post" action="/save">
+      {% for group, habits in groups.items() %}
+        <section class="habit-group">
+          <h2>{{ group }}</h2>
+          {% for habit in habits %}
+            <fieldset class="habit-row">
+              <legend>{{ habit.name }}</legend>
+              <div class="choices">
+                <input type="radio" id="{{ habit.key }}-yes" name="{{ habit.key }}" value="yes" {% if answers.get(habit.key) is sameas true %}checked{% endif %}>
+                <label for="{{ habit.key }}-yes">Yes</label>
+                <input type="radio" id="{{ habit.key }}-no" name="{{ habit.key }}" value="no" {% if answers.get(habit.key) is sameas false %}checked{% endif %}>
+                <label for="{{ habit.key }}-no">No</label>
+                <button type="button" class="clear-choice" data-name="{{ habit.key }}">Clear</button>
+              </div>
+            </fieldset>
+          {% endfor %}
+        </section>
+      {% endfor %}
+      <button class="save-button" type="submit">Save daily log</button>
+    </form>
+  </main>
+  <script>
+    document.querySelectorAll('.clear-choice').forEach((button) => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll(`input[name="${button.dataset.name}"]`).forEach((input) => input.checked = false);
+      });
+    });
+  </script>
+</body>
+</html>

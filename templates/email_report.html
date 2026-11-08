@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>{{ subject }}</title></head>
+<body style="font-family:Arial,sans-serif;color:#23342d;line-height:1.5">
+  <h1 style="color:#236b4e">{{ report.report_type|capitalize }} wellness report</h1>
+  <p>{{ report.period_start }} through {{ report.period_end }}</p>
+  <p><strong>Overall completion: {{ "%.1f"|format(report.overall_percentage) }}%</strong>
+    {% if report.overall_change is not none %}<br>Change from previous period: {{ "%+.1f"|format(report.overall_change) }} percentage points{% endif %}
+  </p>
+  <table style="border-collapse:collapse;width:100%;max-width:760px">
+    <thead><tr><th align="left">Habit</th><th>Yes</th><th>No</th><th>Unanswered</th><th>Completion</th><th>Change</th></tr></thead>
+    <tbody>
+      {% for item in report.habits %}
+      <tr>
+        <td style="padding:7px;border-top:1px solid #dbe5df">{{ item.name }}</td>
+        <td align="center" style="border-top:1px solid #dbe5df">{{ item.yes }}</td>
+        <td align="center" style="border-top:1px solid #dbe5df">{{ item.no }}</td>
+        <td align="center" style="border-top:1px solid #dbe5df">{{ item.unanswered }}</td>
+        <td align="center" style="border-top:1px solid #dbe5df">{{ "%.1f"|format(item.completion_percentage) }}%</td>
+        <td align="center" style="border-top:1px solid #dbe5df">{% if item.change is not none %}{{ "%+.1f"|format(item.change) }} pts{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if report.report_type == "monthly" %}
+    <p><strong>Most consistent:</strong> {{ report.most_consistent|join(", ") }}<br>
+       <strong>Least consistent:</strong> {{ report.least_consistent|join(", ") }}</p>
+  {% endif %}
+</body>
+</html>
