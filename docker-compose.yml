@@ -5,10 +5,11 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    entrypoint: ["/usr/local/bin/web-entrypoint"]
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
-      - wellness_data:/app/data
+      - ./data:/app/data
 
   scheduler:
     image: wellness-log:local
@@ -17,8 +18,5 @@ services:
     env_file:
       - .env
     volumes:
-      - wellness_data:/app/data
+      - ./data:/app/data
     entrypoint: ["/usr/local/bin/scheduler-entrypoint"]
-
-volumes:
-  wellness_data:

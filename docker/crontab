@@ -3,5 +3,7 @@ PATH=/usr/local/bin:/usr/bin:/bin
 
 # Sunday at 9:00 PM local container time
 0 21 * * 0 root cd /app && poetry run python -m wellness_log.reports weekly > /proc/1/fd/1 2> /proc/1/fd/2
+# Sunday at 9:15 PM local container time; skips when Spaces is not configured
+15 21 * * 0 root /usr/local/bin/spaces-weekly-backup > /proc/1/fd/1 2> /proc/1/fd/2
 # First day of each month at 9:00 AM local container time; command reports the previous month
 0 9 1 * * root cd /app && poetry run python -m wellness_log.reports monthly > /proc/1/fd/1 2> /proc/1/fd/2

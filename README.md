@@ -14,7 +14,7 @@ make up
 
 Open <http://localhost:8000>. The port is bound to `127.0.0.1` by default and is not exposed to other hosts.
 
-The `web` and `scheduler` containers use the same image and the same named `wellness_data` volume. Habit data therefore survives container recreation, `make down`, and `make clean`.
+The `web` and `scheduler` containers share the local `./data` directory through a Docker Compose bind mount. SQLite is stored at `./data/wellness.db` on the host (`/app/data/wellness.db` in the containers), so habit data survives container recreation, `make down`, and `make clean`.
 
 ## Configuration
 
@@ -25,7 +25,12 @@ Edit `.env` before starting the application:
 | `APP_TIMEZONE` | Time zone used to determine the current calendar date |
 | `TZ` | Container and cron scheduling time zone |
 | `APP_URL` | URL included in the test email (`http://localhost:8000` by default) |
-| `DATABASE_URL` | SQLite connection URL; the provided value points into the persistent volume |
+| `DATABASE_URL` | SQLite connection URL; the provided value points into the bind-mounted data directory |
+| `SPACES_KEY`, `SPACES_SECRET`, `SPACES_BUCKET` | DigitalOcean Spaces credentials and bucket used for database restore/backup |
+| `SPACES_REGION`, `SPACES_ENDPOINT` | Spaces region and optional endpoint override |
+| `SPACES_DB_KEY`, `SPACES_DB_PATH` | Remote object key and local container database path |
+| `SPACES_BACKUP_PREFIX` | Prefix for timestamped historical database copies |
+| `SPACES_BACKUP_RETENTION` | Maximum historical copies retained (`3` by default) |
 | `AWS_SES_REGION_NAME` | AWS region containing the SES identity (`us-east-1` by default) |
 | `AWS_SES_ACCESS_KEY_ID`, `AWS_SES_SECRET_ACCESS_KEY` | Optional static AWS credentials |
 | `AWS_SES_SESSION_TOKEN` | Optional token for temporary static credentials |
@@ -49,6 +54,8 @@ make test        # run pytest in a container
 make test-email  # send a test email through Amazon SES
 make weekly      # send the current Monday-Sunday report
 make monthly     # send the previous calendar month's report
+make db-download # restore the SQLite database from DigitalOcean Spaces
+make db-upload   # upload/replace the SQLite database in DigitalOcean Spaces
 make clean       # remove containers and local images, preserving data
 ```
 
@@ -61,7 +68,7 @@ docker compose run --rm web poetry run python -m wellness_log.reports weekly --d
 docker compose run --rm web poetry run python -m wellness_log.reports monthly --dry-run
 ```
 
-You can add `--date YYYY-MM-DD` to either report command to make a deterministic historical report. Normal weekly execution is scheduled for Sunday at 9:00 PM; monthly execution is scheduled for 9:00 AM on the first day and covers the previous month. Cron uses the configured `TZ`.
+You can add `--date YYYY-MM-DD` to either report command to make a deterministic historical report. Normal weekly execution is scheduled for Sunday at 9:00 PM; the Spaces database upload runs Sunday at 9:15 PM; monthly execution is scheduled for 9:00 AM on the first day and covers the previous month. Cron uses the configured `TZ`.
 
 Successful delivery periods are recorded in SQLite, preventing repeat sends. An SES failure removes the pending delivery reservation, so the command can be retried. Scheduler and report outcomes appear in `make logs`.
 
@@ -91,7 +98,11 @@ docker compose exec web python -c "import sqlite3; source=sqlite3.connect('/app/
 docker compose cp web:/app/data/wellness-backup.db ./wellness-backup.db
 ```
 
-To restore, stop the services, copy the backup into a temporary container attached to the volume, then start services again. Keep the original backup until the restored app has been checked. `make down` and `make clean` deliberately do not pass `--volumes`; avoid `docker compose down --volumes` unless you intend to delete all data.
+To restore, stop the services and replace `./data/wellness.db` with the backup, then start the services again. Remove any `./data/wellness.db-wal` and `./data/wellness.db-shm` files before restarting, and keep the original backup until the restored app has been checked. The `./data` directory is ignored by Git and is not removed by `make down` or `make clean`.
+
+For DigitalOcean Spaces, configure the `SPACES_*` values in `.env`. When the web container starts without a local database and all required Spaces variables are present, it downloads `SPACES_DB_KEY` before launching the app. With no Spaces configuration, the app starts with a new local database; partial Spaces configuration stops startup with an error.
+
+`make db-upload` takes a consistent SQLite snapshot, preserves the previous remote object as a timestamped historical copy, uploads the current database, and removes older copies beyond `SPACES_BACKUP_RETENTION` (default `3`). The scheduler performs the same upload every Sunday at 9:15 PM and skips it when Spaces is not configured. To restore manually, run `make down`, `make db-download`, then `make upd`; downloading atomically replaces the local database and removes stale WAL sidecars.
 
 ## Adding a habit
 
