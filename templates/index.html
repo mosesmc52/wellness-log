@@ -15,6 +15,9 @@
     </header>
 
     <form method="post" action="/save">
+      <div class="bulk-actions">
+        <button id="set-all-toggle" class="bulk-button" type="button">{% if all_yes %}Set all to No{% else %}Set all to Yes{% endif %}</button>
+      </div>
       {% for group, habits in groups.items() %}
         <section class="habit-group">
           <h2>{{ group }}</h2>
@@ -24,9 +27,8 @@
               <div class="choices">
                 <input type="radio" id="{{ habit.key }}-yes" name="{{ habit.key }}" value="yes" {% if answers.get(habit.key) is sameas true %}checked{% endif %}>
                 <label for="{{ habit.key }}-yes">Yes</label>
-                <input type="radio" id="{{ habit.key }}-no" name="{{ habit.key }}" value="no" {% if answers.get(habit.key) is sameas false %}checked{% endif %}>
+                <input type="radio" id="{{ habit.key }}-no" name="{{ habit.key }}" value="no" {% if answers.get(habit.key) is not sameas true %}checked{% endif %}>
                 <label for="{{ habit.key }}-no">No</label>
-                <button type="button" class="clear-choice" data-name="{{ habit.key }}">Clear</button>
               </div>
             </fieldset>
           {% endfor %}
@@ -36,11 +38,23 @@
     </form>
   </main>
   <script>
-    document.querySelectorAll('.clear-choice').forEach((button) => {
-      button.addEventListener('click', () => {
-        document.querySelectorAll(`input[name="${button.dataset.name}"]`).forEach((input) => input.checked = false);
+    const bulkToggle = document.querySelector('#set-all-toggle');
+    const yesChoices = [...document.querySelectorAll('input[type="radio"][value="yes"]')];
+    const allChoices = [...document.querySelectorAll('input[type="radio"]')];
+
+    const allAreYes = () => yesChoices.every((input) => input.checked);
+    const updateBulkToggle = () => {
+      bulkToggle.textContent = allAreYes() ? 'Set all to No' : 'Set all to Yes';
+    };
+
+    bulkToggle.addEventListener('click', () => {
+      const value = allAreYes() ? 'no' : 'yes';
+      document.querySelectorAll(`input[type="radio"][value="${value}"]`).forEach((input) => {
+        input.checked = true;
       });
+      updateBulkToggle();
     });
+    allChoices.forEach((input) => input.addEventListener('change', updateBulkToggle));
   </script>
 </body>
 </html>

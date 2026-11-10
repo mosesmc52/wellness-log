@@ -64,6 +64,7 @@ def index(
         context={
             "groups": grouped_habits(),
             "answers": answers,
+            "all_yes": all(answers.get(habit.key) is True for habit in HABITS),
             "display_date": format_display_date(today),
             "saved": saved,
         },
@@ -82,7 +83,7 @@ async def save(request: Request, db: Session = Depends(get_db)):
         raw_value = form.get(habit.key)
         if raw_value not in {None, "", "yes", "no"}:
             raise HTTPException(status_code=400, detail=f"Invalid value for {habit.key}")
-        completed = True if raw_value == "yes" else False if raw_value == "no" else None
+        completed = raw_value == "yes"
         if habit.key in existing:
             existing[habit.key].completed = completed
         else:

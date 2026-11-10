@@ -164,7 +164,9 @@ def _prune_backups(spaces: SpacesClient, cfg: SyncConfig) -> None:
         print(f"Deleted expired backup: s3://{spaces.bucket}/{stale['Key']}")
 
 
-def download_sqlite(spaces: SpacesClient, cfg: SyncConfig) -> Path:
+def download_sqlite(
+    spaces: SpacesClient, cfg: SyncConfig, *, allow_missing: bool = False
+) -> Path | None:
     if cfg.make_dirs:
         _ensure_parent_dir(cfg.path)
 
@@ -174,6 +176,9 @@ def download_sqlite(spaces: SpacesClient, cfg: SyncConfig) -> Path:
     try:
         resp = spaces.client.get_object(Bucket=spaces.bucket, Key=cfg.key)
     except ClientError as e:
+        code = getattr(e, "response", {}).get("Error", {}).get("Code")
+        if allow_missing and code in ("NoSuchKey", "404", "NotFound"):
+            return None
         raise RuntimeError(
             f"Failed to download s3://{spaces.bucket}/{cfg.key}: {e}"
         ) from e
@@ -294,6 +299,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         action="store_true",
         help="If set, refuse to overwrite local file if it already exists",
     )
+    sp_download.add_argument(
+        "--allow-missing",
+        action="store_true",
+        help="Exit successfully when the remote object does not exist",
+    )
 
     sp_upload = sub.add_parser(
         "upload", help="Upload local file to Spaces (replace object key)"
@@ -328,8 +338,16 @@ def main(argv: list[str]) -> int:
     spaces = SpacesClient()  # reads env vars by default
 
     if args.cmd == "download":
-        out = download_sqlite(spaces, cfg)
-        print(f"Downloaded to: {out}")
+        out = download_sqlite(
+            spaces, cfg, allow_missing=getattr(args, "allow_missing", False)
+        )
+        if out is None:
+            print(
+                f"No remote database found at s3://{spaces.bucket}/{cfg.key}; "
+                "continuing without a download."
+            )
+        else:
+            print(f"Downloaded to: {out}")
         return 0
 
     if args.cmd == "upload":

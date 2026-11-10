@@ -2,6 +2,8 @@ from datetime import UTC, datetime, timedelta
 from io import BytesIO
 import sqlite3
 
+from botocore.exceptions import ClientError
+
 from spaces_sqlite_sync import SyncConfig, download_sqlite, upload_sqlite_replace
 
 
@@ -36,6 +38,14 @@ class FakeS3Client:
         self.delete_calls.append(kwargs)
 
 
+class MissingObjectClient(FakeS3Client):
+    def get_object(self, **_kwargs):
+        raise ClientError(
+            {"Error": {"Code": "NoSuchKey", "Message": "Not found"}},
+            "GetObject",
+        )
+
+
 class FakeSpaces:
     bucket = "test-bucket"
 
@@ -58,6 +68,20 @@ def test_download_replaces_database_and_removes_sidecars(tmp_path):
     assert database_path.read_bytes() == b"new database"
     assert not database_path.with_name("wellness.db-wal").exists()
     assert not database_path.with_name("wellness.db-shm").exists()
+
+
+def test_download_can_continue_when_remote_database_is_missing(tmp_path):
+    database_path = tmp_path / "wellness.db"
+    spaces = FakeSpaces(MissingObjectClient())
+
+    result = download_sqlite(
+        spaces,
+        SyncConfig(key="db/wellness.db", path=database_path),
+        allow_missing=True,
+    )
+
+    assert result is None
+    assert not database_path.exists()
 
 
 def test_upload_uses_snapshot_and_prunes_historical_copies(tmp_path):

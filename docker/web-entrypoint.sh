@@ -18,7 +18,7 @@ if [ "${SKIP_DB_BOOTSTRAP:-0}" != "1" ]; then
 
     if [ -z "${missing}" ]; then
       echo "Local SQLite database is missing; downloading it from DigitalOcean Spaces."
-      python /app/spaces_sqlite_sync.py download --no-overwrite-local
+      python /app/spaces_sqlite_sync.py download --no-overwrite-local --allow-missing
     elif [ "${configured}" = "1" ]; then
       echo "Spaces is partially configured; missing:${missing}" >&2
       exit 1

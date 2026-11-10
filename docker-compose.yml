@@ -6,6 +6,7 @@ services:
     env_file:
       - .env
     entrypoint: ["/usr/local/bin/web-entrypoint"]
+    command: ["uvicorn", "wellness_log.main:app", "--host", "0.0.0.0", "--port", "8000"]
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
